@@ -17,24 +17,16 @@ const char *targetUrl = "http://www.example.com/";
 void testLED()
 {
   LOGService::divider("LED Test");
-  LOGService::info("LED ON\n");
   pinMode(LED_BUILTIN, OUTPUT);
-  digitalWrite(LED_BUILTIN, LOW);
-  delay(1000);
-  LOGService::info("LED OFF\n");
-  digitalWrite(LED_BUILTIN, HIGH);
-  delay(1000);
-  LOGService::info("LED ON\n");
-  digitalWrite(LED_BUILTIN, LOW);
-  delay(1000);
-  LOGService::info("LED OFF\n");
-  digitalWrite(LED_BUILTIN, HIGH);
-  delay(1000);
-  LOGService::info("LED ON\n");
-  digitalWrite(LED_BUILTIN, LOW);
-  delay(1000);
-  LOGService::info("LED OFF\n");
-  digitalWrite(LED_BUILTIN, HIGH);
+  for (int i = 0; i < 3; i++)
+  {
+    LOGService::info("LED ON\n");
+    digitalWrite(LED_BUILTIN, LOW);
+    delay(1000);
+    LOGService::info("LED OFF\n");
+    digitalWrite(LED_BUILTIN, HIGH);
+    delay(1000);
+  }
   LOGService::divider("LED Test Completed");
 }
 
