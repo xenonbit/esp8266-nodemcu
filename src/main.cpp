@@ -70,44 +70,46 @@ void testWiFi()
     LOGService::info(("IP Address: " + WiFiService::localIP().toString() + "\n").c_str());
     LOGService::info(("MAC Address: " + WiFiService::macAddress() + "\n").c_str());
     LOGService::info("RSSI: %d dBm\n", WiFiService::RSSI());
-    LOGService::divider("WiFi Test Completed");
   }
   else
   {
     LOGService::error("WiFi not Connected!\n");
-    LOGService::divider("WiFi Test Completed");
   }
+  LOGService::divider("WiFi Test Completed");
 }
 
 void testHttpRequest()
 {
-  if (!WiFiService::isConnected())
+  LOGService::divider("HTTP Request Test");
+  if (WiFiService::isConnected())
   {
-    return;
-  }
-  LOGService::divider("Website Test");
-  LOGService::info("URL: %s\n", targetUrl);
-  HTTPClient http;
-  WiFiClient client;
-  http.begin(client, targetUrl);
-  int httpCode = http.GET();
-  if (httpCode > 0)
-  {
-    if (httpCode == HTTP_CODE_OK)
+    LOGService::info("URL: %s\n", targetUrl);
+    HTTPClient http;
+    WiFiClient client;
+    http.begin(client, targetUrl);
+    int httpCode = http.GET();
+    if (httpCode > 0)
     {
-      LOGService::info("HTTP status code: %d\n", httpCode);
+      if (httpCode == HTTP_CODE_OK)
+      {
+        LOGService::info("HTTP status code: %d\n", httpCode);
+      }
+      else
+      {
+        LOGService::error("HTTP status code: %d\n", httpCode);
+      }
     }
     else
     {
-      LOGService::error("HTTP status code: %d\n", httpCode);
+      LOGService::error("HTTP GET request failed! Error: %s\n", http.errorToString(httpCode).c_str());
     }
+    http.end();
   }
   else
   {
-    LOGService::error("HTTP GET request failed! Error: %s\n", http.errorToString(httpCode).c_str());
+    LOGService::error("WiFi not Connected!\n");
   }
-  http.end();
-  LOGService::divider("Website Test Completed");
+  LOGService::divider("HTTP Request Test Completed");
 }
 
 void test()
