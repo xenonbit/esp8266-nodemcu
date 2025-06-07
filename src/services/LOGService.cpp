@@ -3,6 +3,21 @@ namespace LOGService
 {
 #define LOG_BUFFER_SIZE 256
 
+    void divider(const char *format, ...)
+    {
+        char log_buffer[LOG_BUFFER_SIZE];
+        Serial.print(F("========= "));
+        va_list args;
+        va_start(args, format);
+        int printed_len = vsnprintf(log_buffer, sizeof(log_buffer), format, args);
+        va_end(args);
+        if (printed_len > 0)
+        {
+            Serial.print(log_buffer);
+        }
+        Serial.print(F(" =========\n"));
+    }
+
     void info(const char *format, ...)
     {
         char log_buffer[LOG_BUFFER_SIZE];
