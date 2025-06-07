@@ -1,9 +1,9 @@
 #include <Arduino.h>
-#include <ESP8266WiFi.h>
 #include <ESP8266HTTPClient.h>
 #include "services/LOGService.h"
 #include "services/ROMService.h"
 #include "services/CommandService.h"
+#include "services/WiFiService.h"
 
 #define SSID_MAX_LEN 33
 #define PASS_MAX_LEN 64
@@ -12,40 +12,7 @@
 #define PASS_START_ADDR (SSID_START_ADDR + SSID_MAX_LEN)
 #define EEPROM_SIZE (PASS_START_ADDR + PASS_MAX_LEN)
 
-const long WIFI_TIMEOUT_MS = 15000;
 const char *targetUrl = "http://www.example.com/";
-
-void testWebsite()
-{
-  if (WiFi.status() != WL_CONNECTED)
-  {
-    return;
-  }
-  LOGService::divider("Website Test");
-  LOGService::info("URL: %s\n", targetUrl);
-  HTTPClient http;
-  WiFiClient client;
-  http.begin(client, targetUrl);
-  int httpCode = http.GET();
-  if (httpCode > 0)
-  {
-    if (httpCode == HTTP_CODE_OK)
-    {
-      LOGService::info("HTTP status code: %d\n", httpCode);
-    }
-    else
-    {
-      LOGService::error("HTTP status code: %d\n", httpCode);
-    }
-  }
-  else
-  {
-    LOGService::error("HTTP GET request failed! Error: %s\n", http.errorToString(httpCode).c_str());
-  }
-  http.end();
-  WiFi.disconnect();
-  LOGService::divider("Website Test Completed");
-}
 
 void testLED()
 {
@@ -76,31 +43,16 @@ void testWiFi()
   LOGService::divider("WiFi Test");
   String ssid = ROMService::readString(SSID_START_ADDR, SSID_MAX_LEN);
   String password = ROMService::readString(PASS_START_ADDR, PASS_MAX_LEN);
-  bool connected = false;
-  WiFi.mode(WIFI_STA);
   if (ssid.length() > 0 && password.length() > 0)
   {
     LOGService::info(("Attempting to connect with saved credentials: SSID=" + ssid + "\n").c_str());
-    WiFi.begin(ssid.c_str(), password.c_str());
-
-    unsigned long startTime = millis();
-    unsigned long difference = millis() - startTime;
-    while (WiFi.status() != WL_CONNECTED && ((difference = millis() - startTime) < WIFI_TIMEOUT_MS))
-    {
-      LOGService::drawProgressBar(difference, WIFI_TIMEOUT_MS, 50);
-      delay(1000);
-    }
-    LOGService::drawProgressBar(WIFI_TIMEOUT_MS, WIFI_TIMEOUT_MS, 50);
-    if (WiFi.status() == WL_CONNECTED)
-    {
-      connected = true;
-    }
-    else
+    WiFiService::connect(ssid.c_str(), password.c_str());
+    if (!WiFiService::waitForConnection(true))
     {
       LOGService::info("Failed to connect with saved credentials.\n");
     }
   }
-  if (!connected)
+  if (!WiFiService::isConnected())
   {
     LOGService::info("Enter SSID:\n");
     ssid = CommandService::waitForInput();
@@ -109,22 +61,15 @@ void testWiFi()
     ROMService::writeString(SSID_START_ADDR, ssid, SSID_MAX_LEN);
     ROMService::writeString(PASS_START_ADDR, password, PASS_MAX_LEN);
     LOGService::info("Credentials saved to ROM.\n");
-    WiFi.begin(ssid.c_str(), password.c_str());
-    unsigned long startTime = millis();
-    unsigned long difference = millis() - startTime;
-    while (WiFi.status() != WL_CONNECTED && ((difference = millis() - startTime) < WIFI_TIMEOUT_MS))
-    {
-      LOGService::drawProgressBar(difference, WIFI_TIMEOUT_MS, 50);
-      delay(1000);
-    }
-    LOGService::drawProgressBar(WIFI_TIMEOUT_MS, WIFI_TIMEOUT_MS, 50);
+    WiFiService::connect(ssid.c_str(), password.c_str());
+    WiFiService::waitForConnection(true);
   }
-  if (WiFi.status() == WL_CONNECTED)
+  if (WiFiService::isConnected())
   {
     LOGService::success("WiFi Connected!\n");
-    LOGService::info(("IP Address: " + WiFi.localIP().toString() + "\n").c_str());
-    LOGService::info(("MAC Address: " + WiFi.macAddress() + "\n").c_str());
-    LOGService::info("RSSI: %d dBm\n", WiFi.RSSI());
+    LOGService::info(("IP Address: " + WiFiService::localIP().toString() + "\n").c_str());
+    LOGService::info(("MAC Address: " + WiFiService::macAddress() + "\n").c_str());
+    LOGService::info("RSSI: %d dBm\n", WiFiService::RSSI());
     LOGService::divider("WiFi Test Completed");
   }
   else
@@ -134,12 +79,44 @@ void testWiFi()
   }
 }
 
+void testHttpRequest()
+{
+  if (!WiFiService::isConnected())
+  {
+    return;
+  }
+  LOGService::divider("Website Test");
+  LOGService::info("URL: %s\n", targetUrl);
+  HTTPClient http;
+  WiFiClient client;
+  http.begin(client, targetUrl);
+  int httpCode = http.GET();
+  if (httpCode > 0)
+  {
+    if (httpCode == HTTP_CODE_OK)
+    {
+      LOGService::info("HTTP status code: %d\n", httpCode);
+    }
+    else
+    {
+      LOGService::error("HTTP status code: %d\n", httpCode);
+    }
+  }
+  else
+  {
+    LOGService::error("HTTP GET request failed! Error: %s\n", http.errorToString(httpCode).c_str());
+  }
+  http.end();
+  LOGService::divider("Website Test Completed");
+}
+
 void test()
 {
   LOGService::divider("Testing");
   testLED();
   testWiFi();
-  testWebsite();
+  testHttpRequest();
+  WiFiService::disconnect();
   LOGService::divider("Test Completed");
 }
 
