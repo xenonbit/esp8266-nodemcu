@@ -1,5 +1,6 @@
 #include <Arduino.h>
 #include <ESP8266WiFi.h>
+#include <ESP8266HTTPClient.h>
 #include "services/LOGService.h"
 #include "services/ROMService.h"
 #include "services/CommandService.h"
@@ -10,6 +11,44 @@
 #define SSID_START_ADDR 0
 #define PASS_START_ADDR (SSID_START_ADDR + SSID_MAX_LEN)
 #define EEPROM_SIZE (PASS_START_ADDR + PASS_MAX_LEN)
+
+const long WIFI_TIMEOUT_MS = 15000;
+
+void testWebsite()
+{
+  LOGService::info("Testing Website...\n");
+
+  HTTPClient http;
+  WiFiClient client;
+
+  http.begin(client, "http://www.example.com/");
+
+  int httpCode = http.GET();
+
+  if (httpCode > 0)
+  {
+    LOGService::info("HTTP GET request successful! HTTP Status Code: %d\n", httpCode);
+
+    if (httpCode == HTTP_CODE_OK)
+    {
+      String payload = http.getString();
+      Serial.println("--- Response Payload (first 200 chars) ---");
+      Serial.println(payload.substring(0, min((int)payload.length(), 200)));
+      Serial.println("----------------------------------------");
+    }
+    else
+    {
+      LOGService::info("Received non-OK HTTP status code: %d\n", httpCode);
+    }
+  }
+  else
+  {
+    LOGService::error("HTTP GET request failed! Error: %s\n", http.errorToString(httpCode).c_str());
+  }
+
+  http.end();
+  LOGService::success("Website Test Completed.\n");
+}
 
 void test()
 {
@@ -45,13 +84,15 @@ void test()
 
   bool connected = false;
 
+  WiFi.mode(WIFI_STA);
+
   if (ssid.length() > 0 && password.length() > 0)
   {
     LOGService::info(("Attempting to connect with saved credentials: SSID=" + ssid + "\n").c_str());
     WiFi.begin(ssid.c_str(), password.c_str());
 
     unsigned long startTime = millis();
-    while (WiFi.status() != WL_CONNECTED && (millis() - startTime < 15000))
+    while (WiFi.status() != WL_CONNECTED && (millis() - startTime < WIFI_TIMEOUT_MS))
     {
       delay(1000);
       Serial.print(".");
@@ -85,7 +126,7 @@ void test()
     WiFi.begin(ssid.c_str(), password.c_str());
 
     unsigned long startTime = millis();
-    while (WiFi.status() != WL_CONNECTED && (millis() - startTime < 15000))
+    while (WiFi.status() != WL_CONNECTED && (millis() - startTime < WIFI_TIMEOUT_MS))
     {
       delay(1000);
       Serial.print(".");
@@ -100,15 +141,19 @@ void test()
     LOGService::info(("IP Address: " + WiFi.localIP().toString() + "\n").c_str());
     LOGService::info(("MAC Address: " + WiFi.macAddress() + "\n").c_str());
     LOGService::info("RSSI: %d dBm\n", WiFi.RSSI());
+
+    testWebsite();
+
     WiFi.disconnect();
+
+    LOGService::success("WiFi Test Completed.\n");
   }
   else
   {
     LOGService::error("WiFi not Connected!\n");
     WiFi.disconnect();
+    LOGService::success("WiFi Test Completed.\n");
   }
-
-  LOGService::success("WiFi Test Completed.\n");
 
   delay(1000);
   LOGService::success("Test Completed.\n");
