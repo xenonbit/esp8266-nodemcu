@@ -13,32 +13,30 @@
 #define EEPROM_SIZE (PASS_START_ADDR + PASS_MAX_LEN)
 
 const long WIFI_TIMEOUT_MS = 15000;
+const char *targetUrl = "http://www.example.com/";
 
 void testWebsite()
 {
-  Serial.println("=== Website Test ===");
+  LOGService::divider("Website Test");
+
+  LOGService::info("URL: %d\n", targetUrl);
 
   HTTPClient http;
   WiFiClient client;
 
-  http.begin(client, "http://www.example.com/");
+  http.begin(client, targetUrl);
 
   int httpCode = http.GET();
 
   if (httpCode > 0)
   {
-    LOGService::info("HTTP GET request successful! HTTP Status Code: %d\n", httpCode);
-
     if (httpCode == HTTP_CODE_OK)
     {
-      String payload = http.getString();
-      Serial.println("--- Response Payload (first 200 chars) ---");
-      Serial.println(payload.substring(0, min((int)payload.length(), 200)));
-      Serial.println("----------------------------------------");
+      LOGService::info("HTTP status code: %d\n", httpCode);
     }
     else
     {
-      LOGService::info("Received non-OK HTTP status code: %d\n", httpCode);
+      LOGService::error("HTTP status code: %d\n", httpCode);
     }
   }
   else
@@ -47,14 +45,14 @@ void testWebsite()
   }
 
   http.end();
-  Serial.println("=== Website Test Completed ===\n");
+  LOGService::divider("Website Test Completed");
 }
 
 void test()
 {
-  Serial.println("====== Testing ======\n");
+  LOGService::divider("Testing");
   delay(1000);
-  Serial.println("=== LED Test ===");
+  LOGService::divider("LED Test");
   delay(1000);
   LOGService::info("LED ON\n");
   pinMode(LED_BUILTIN, OUTPUT);
@@ -76,8 +74,8 @@ void test()
   digitalWrite(LED_BUILTIN, HIGH);
   delay(1000);
 
-  Serial.println("=== LED Test Completed ===\n");
-  Serial.println("=== WiFi Test ===");
+  LOGService::divider("LED Test Completed");
+  LOGService::divider("WiFi Test");
 
   String ssid = ROMService::readString(SSID_START_ADDR, SSID_MAX_LEN);
   String password = ROMService::readString(PASS_START_ADDR, PASS_MAX_LEN);
@@ -92,11 +90,14 @@ void test()
     WiFi.begin(ssid.c_str(), password.c_str());
 
     unsigned long startTime = millis();
-    while (WiFi.status() != WL_CONNECTED && (millis() - startTime < WIFI_TIMEOUT_MS))
+    unsigned long difference = millis() - startTime;
+    while (WiFi.status() != WL_CONNECTED && ((difference = millis() - startTime) < WIFI_TIMEOUT_MS))
     {
+      LOGService::drawProgressBar(difference, WIFI_TIMEOUT_MS, 50);
       delay(1000);
-      Serial.print(".");
     }
+
+    LOGService::drawProgressBar(WIFI_TIMEOUT_MS, WIFI_TIMEOUT_MS, 50);
 
     if (WiFi.status() == WL_CONNECTED)
     {
@@ -126,22 +127,25 @@ void test()
     WiFi.begin(ssid.c_str(), password.c_str());
 
     unsigned long startTime = millis();
-    while (WiFi.status() != WL_CONNECTED && (millis() - startTime < WIFI_TIMEOUT_MS))
+    unsigned long difference = millis() - startTime;
+    while (WiFi.status() != WL_CONNECTED && ((difference = millis() - startTime) < WIFI_TIMEOUT_MS))
     {
+      LOGService::drawProgressBar(difference, WIFI_TIMEOUT_MS, 50);
       delay(1000);
-      Serial.print(".");
     }
+
+    LOGService::drawProgressBar(WIFI_TIMEOUT_MS, WIFI_TIMEOUT_MS, 50);
   }
 
   Serial.println();
 
   if (WiFi.status() == WL_CONNECTED)
   {
-    LOGService::info("WiFi Connected!\n");
+    LOGService::success("WiFi Connected!\n");
     LOGService::info(("IP Address: " + WiFi.localIP().toString() + "\n").c_str());
     LOGService::info(("MAC Address: " + WiFi.macAddress() + "\n").c_str());
     LOGService::info("RSSI: %d dBm\n", WiFi.RSSI());
-    Serial.println("=== WiFi Test Completed ===\n");
+    LOGService::divider("WiFi Test Completed");
 
     testWebsite();
 
@@ -151,11 +155,11 @@ void test()
   {
     LOGService::error("WiFi not Connected!\n");
     WiFi.disconnect();
-    Serial.println("=== WiFi Test Completed ===\n");
+    LOGService::divider("WiFi Test Completed");
   }
 
   delay(1000);
-  Serial.println("====== Test Completed ======\n");
+  LOGService::divider("Test Completed");
 }
 
 void setup()
@@ -165,16 +169,11 @@ void setup()
   delay(1000);
 
   Serial.println();
-
-  LOGService::info("Booting...\n");
+  LOGService::divider("Booting");
   ROMService::initialize(EEPROM_SIZE);
   LOGService::info("ROM initialized with size: %d bytes.\n", EEPROM_SIZE);
-  LOGService::success("Booted.\n");
+  LOGService::divider("Booted");
   LOGService::info("Enter command:\n");
-
-  delay(1000);
-
-  Serial.setTimeout(10);
 }
 
 void loop()
@@ -193,7 +192,7 @@ void loop()
   }
   else
   {
-    LOGService::info(("Unknown command: " + command + "\n").c_str());
+    LOGService::info("Unknown command: %s", command);
   }
 
   LOGService::info("Enter command:\n");

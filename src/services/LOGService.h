@@ -5,6 +5,7 @@
 
 namespace LOGService
 {
+    void divider(const char *format, ...);
     void info(const char *format, ...);
     void error(const char *format, ...);
     void success(const char *format, ...);
