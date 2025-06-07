@@ -1,0 +1,156 @@
+#include <Arduino.h>
+#include <ESP8266WiFi.h>
+#include "services/LOGService.h"
+#include "services/ROMService.h"
+#include "services/CommandService.h"
+
+#define SSID_MAX_LEN 33
+#define PASS_MAX_LEN 64
+
+#define SSID_START_ADDR 0
+#define PASS_START_ADDR (SSID_START_ADDR + SSID_MAX_LEN)
+#define EEPROM_SIZE (PASS_START_ADDR + PASS_MAX_LEN)
+
+void test()
+{
+  LOGService::info("Testing...\n");
+  delay(1000);
+  LOGService::info("Testing LED...\n");
+  delay(1000);
+  LOGService::info("LED ON\n");
+  pinMode(LED_BUILTIN, OUTPUT);
+  digitalWrite(LED_BUILTIN, LOW);
+  delay(1000);
+  LOGService::info("LED OFF\n");
+  digitalWrite(LED_BUILTIN, HIGH);
+  delay(1000);
+  LOGService::info("LED ON\n");
+  digitalWrite(LED_BUILTIN, LOW);
+  delay(1000);
+  LOGService::info("LED OFF\n");
+  digitalWrite(LED_BUILTIN, HIGH);
+  delay(1000);
+  LOGService::info("LED ON\n");
+  digitalWrite(LED_BUILTIN, LOW);
+  delay(1000);
+  LOGService::info("LED OFF\n");
+  digitalWrite(LED_BUILTIN, HIGH);
+  delay(1000);
+
+  LOGService::success("LED Test Completed.\n");
+  LOGService::info("Testing WiFi...\n");
+
+  String ssid = ROMService::readString(SSID_START_ADDR, SSID_MAX_LEN);
+  String password = ROMService::readString(PASS_START_ADDR, PASS_MAX_LEN);
+
+  bool connected = false;
+
+  if (ssid.length() > 0 && password.length() > 0)
+  {
+    LOGService::info(("Attempting to connect with saved credentials: SSID=" + ssid + "\n").c_str());
+    WiFi.begin(ssid.c_str(), password.c_str());
+
+    unsigned long startTime = millis();
+    while (WiFi.status() != WL_CONNECTED && (millis() - startTime < 15000))
+    {
+      delay(1000);
+      Serial.print(".");
+    }
+
+    if (WiFi.status() == WL_CONNECTED)
+    {
+      connected = true;
+    }
+    else
+    {
+      Serial.println();
+      LOGService::info("Failed to connect with saved credentials.\n");
+      WiFi.disconnect();
+    }
+  }
+
+  if (!connected)
+  {
+    LOGService::info("Enter SSID:\n");
+
+    ssid = CommandService::waitForInput();
+
+    LOGService::info("Enter Password:\n");
+
+    password = CommandService::waitForInput();
+
+    ROMService::writeString(SSID_START_ADDR, ssid, SSID_MAX_LEN);
+    ROMService::writeString(PASS_START_ADDR, password, PASS_MAX_LEN);
+    LOGService::info("Credentials saved to ROM.\n");
+    WiFi.begin(ssid.c_str(), password.c_str());
+
+    unsigned long startTime = millis();
+    while (WiFi.status() != WL_CONNECTED && (millis() - startTime < 15000))
+    {
+      delay(1000);
+      Serial.print(".");
+    }
+  }
+
+  Serial.println();
+
+  if (WiFi.status() == WL_CONNECTED)
+  {
+    LOGService::info("WiFi Connected!\n");
+    LOGService::info(("IP Address: " + WiFi.localIP().toString() + "\n").c_str());
+    LOGService::info(("MAC Address: " + WiFi.macAddress() + "\n").c_str());
+    LOGService::info("RSSI: %d dBm\n", WiFi.RSSI());
+    WiFi.disconnect();
+  }
+  else
+  {
+    LOGService::error("WiFi not Connected!\n");
+    WiFi.disconnect();
+  }
+
+  LOGService::success("WiFi Test Completed.\n");
+
+  delay(1000);
+  LOGService::success("Test Completed.\n");
+}
+
+void setup()
+{
+  Serial.begin(115200);
+
+  delay(1000);
+
+  Serial.println();
+
+  LOGService::info("Booting...\n");
+  ROMService::initialize(EEPROM_SIZE);
+  LOGService::info("ROM initialized with size: %d bytes.\n", EEPROM_SIZE);
+  LOGService::success("Booted.\n");
+  LOGService::info("Enter command:\n");
+
+  delay(1000);
+
+  Serial.setTimeout(10);
+}
+
+void loop()
+{
+  String command = CommandService::waitForInput();
+
+  if (command == "test")
+  {
+    test();
+  }
+  else if (command == "reset")
+  {
+    LOGService::info("Clearing ROM...\n");
+    ROMService::clear();
+    LOGService::success("ROM cleared.\n");
+  }
+  else
+  {
+    LOGService::info(("Unknown command: " + command + "\n").c_str());
+  }
+
+  LOGService::info("Enter command:\n");
+}
