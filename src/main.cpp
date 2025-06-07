@@ -19,7 +19,7 @@ void testWebsite()
 {
   LOGService::divider("Website Test");
 
-  LOGService::info("URL: %d\n", targetUrl);
+  LOGService::info("URL: %s\n", targetUrl);
 
   HTTPClient http;
   WiFiClient client;
@@ -105,7 +105,6 @@ void test()
     }
     else
     {
-      Serial.println();
       LOGService::info("Failed to connect with saved credentials.\n");
       WiFi.disconnect();
     }
@@ -136,8 +135,6 @@ void test()
 
     LOGService::drawProgressBar(WIFI_TIMEOUT_MS, WIFI_TIMEOUT_MS, 50);
   }
-
-  Serial.println();
 
   if (WiFi.status() == WL_CONNECTED)
   {
