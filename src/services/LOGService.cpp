@@ -1,34 +1,48 @@
 #include "LOGService.h"
 namespace LOGService
 {
+#define LOG_BUFFER_SIZE 256
+
     void info(const char *format, ...)
     {
+        char log_buffer[LOG_BUFFER_SIZE];
         Serial.print(F("[INFO] "));
-
         va_list args;
         va_start(args, format);
-        Serial.printf(format, args);
+        int printed_len = vsnprintf(log_buffer, sizeof(log_buffer), format, args);
         va_end(args);
+        if (printed_len > 0)
+        {
+            Serial.print(log_buffer);
+        }
     }
 
     void error(const char *format, ...)
     {
+        char log_buffer[LOG_BUFFER_SIZE];
         Serial.print(F("[ERROR] "));
-
         va_list args;
         va_start(args, format);
-        Serial.printf(format, args);
+        int printed_len = vsnprintf(log_buffer, sizeof(log_buffer), format, args);
         va_end(args);
+        if (printed_len > 0)
+        {
+            Serial.print(log_buffer);
+        }
     }
 
     void success(const char *format, ...)
     {
+        char log_buffer[LOG_BUFFER_SIZE];
         Serial.print(F("[SUCCESS] "));
-
         va_list args;
         va_start(args, format);
-        Serial.printf(format, args);
+        int printed_len = vsnprintf(log_buffer, sizeof(log_buffer), format, args);
         va_end(args);
+        if (printed_len > 0)
+        {
+            Serial.print(log_buffer);
+        }
     }
 
     void drawProgressBar(int current, int total, int barWidth)

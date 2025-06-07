@@ -16,7 +16,7 @@ const long WIFI_TIMEOUT_MS = 15000;
 
 void testWebsite()
 {
-  LOGService::info("Testing Website...\n");
+  Serial.println("=== Website Test ===");
 
   HTTPClient http;
   WiFiClient client;
@@ -47,14 +47,14 @@ void testWebsite()
   }
 
   http.end();
-  LOGService::success("Website Test Completed.\n");
+  Serial.println("=== Website Test Completed ===\n");
 }
 
 void test()
 {
-  LOGService::info("Testing...\n");
+  Serial.println("====== Testing ======\n");
   delay(1000);
-  LOGService::info("Testing LED...\n");
+  Serial.println("=== LED Test ===");
   delay(1000);
   LOGService::info("LED ON\n");
   pinMode(LED_BUILTIN, OUTPUT);
@@ -76,8 +76,8 @@ void test()
   digitalWrite(LED_BUILTIN, HIGH);
   delay(1000);
 
-  LOGService::success("LED Test Completed.\n");
-  LOGService::info("Testing WiFi...\n");
+  Serial.println("=== LED Test Completed ===\n");
+  Serial.println("=== WiFi Test ===");
 
   String ssid = ROMService::readString(SSID_START_ADDR, SSID_MAX_LEN);
   String password = ROMService::readString(PASS_START_ADDR, PASS_MAX_LEN);
@@ -141,22 +141,21 @@ void test()
     LOGService::info(("IP Address: " + WiFi.localIP().toString() + "\n").c_str());
     LOGService::info(("MAC Address: " + WiFi.macAddress() + "\n").c_str());
     LOGService::info("RSSI: %d dBm\n", WiFi.RSSI());
+    Serial.println("=== WiFi Test Completed ===\n");
 
     testWebsite();
 
     WiFi.disconnect();
-
-    LOGService::success("WiFi Test Completed.\n");
   }
   else
   {
     LOGService::error("WiFi not Connected!\n");
     WiFi.disconnect();
-    LOGService::success("WiFi Test Completed.\n");
+    Serial.println("=== WiFi Test Completed ===\n");
   }
 
   delay(1000);
-  LOGService::success("Test Completed.\n");
+  Serial.println("====== Test Completed ======\n");
 }
 
 void setup()
