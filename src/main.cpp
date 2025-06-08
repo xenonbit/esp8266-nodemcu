@@ -1,9 +1,9 @@
 #include <Arduino.h>
-#include <ESP8266HTTPClient.h>
 #include "services/LOGService.h"
 #include "services/ROMService.h"
 #include "services/CommandService.h"
 #include "services/WiFiService.h"
+#include "services/HTTPRequestService.h"
 
 #define SSID_MAX_LEN 33
 #define PASS_MAX_LEN 64
@@ -76,26 +76,15 @@ void testHttpRequest()
   if (WiFiService::isConnected())
   {
     LOGService::info("URL: %s\n", targetUrl);
-    HTTPClient http;
-    WiFiClient client;
-    http.begin(client, targetUrl);
-    int httpCode = http.GET();
-    if (httpCode > 0)
+    HTTPRequestService::HTTPResponse response = HTTPRequestService::GET(targetUrl);
+    if (response.ok())
     {
-      if (httpCode == HTTP_CODE_OK)
-      {
-        LOGService::info("HTTP status code: %d\n", httpCode);
-      }
-      else
-      {
-        LOGService::error("HTTP status code: %d\n", httpCode);
-      }
+      LOGService::info("HTTP status code: %d\n", response.code);
     }
     else
     {
-      LOGService::error("HTTP GET request failed! Error: %s\n", http.errorToString(httpCode).c_str());
+      LOGService::error("HTTP status code: %d\n", response.code);
     }
-    http.end();
   }
   else
   {
